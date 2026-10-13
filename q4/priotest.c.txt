@@ -1,0 +1,80 @@
+#include "kernel/types.h"
+#include "user/user.h"
+
+#define NW 4
+
+int prios[NW] = {2, 6, 12, 20};
+volatile int sink;
+
+void
+spin(int loops)
+{
+  for (int i = 0; i < loops; i++)
+    for (int j = 0; j < 1000000; j++)
+      sink++;
+}
+
+int
+main(int argc, char *argv[])
+{
+  int pid[NW], cur[NW], done[NW], order[NW], fin[NW];
+  int loops = argc > 1 ? atoi(argv[1]) : 6000;
+  int t0, t, left = NW, k = 0, low = NW - 1;
+
+  set_priority(getpid(), 1);
+  printf("priotest: %d CPU-bound workers, %d units each, aging every 30 ticks\n",
+         NW, loops);
+
+  for (int i = 0; i < NW; i++) {
+    if ((pid[i] = fork()) == 0) {
+      spin(loops);
+      exit(0);
+    }
+    set_priority(pid[i], prios[i]);
+    cur[i] = prios[i];
+    done[i] = 0;
+    printf("forked pid %d with priority %d\n", pid[i], prios[i]);
+  }
+
+  t0 = uptime();
+  while (left > 0) {
+    pause(1);
+    t = uptime() - t0;
+    for (int i = 0; i < NW; i++) {
+      if (done[i])
+        continue;
+      int p = get_priority(pid[i]);
+      if (p < 0) {
+        done[i] = 1;
+        fin[i] = t;
+        order[k++] = i;
+        left--;
+        printf("t=%d  pid %d (initial prio %d) FINISHED\n", t, pid[i], prios[i]);
+      } else if (p != cur[i]) {
+        if (i == low)
+          printf("t=%d  pid %d aged: priority %d -> %d (waited > 30 ticks)\n",
+                 t, pid[i], cur[i], p);
+        cur[i] = p;
+      }
+    }
+    if (t % 25 == 0) {
+      printf("t=%d  snapshot:", t);
+      for (int i = 0; i < NW; i++)
+        printf("  pid%d=%d", pid[i], done[i] ? 0 : cur[i]);
+      printf("\n");
+    }
+  }
+
+  for (int i = 0; i < NW; i++)
+    wait(0);
+
+  printf("\norder  pid  initial-prio  final-prio  completion-tick\n");
+  for (int r = 0; r < NW; r++) {
+    int i = order[r];
+    printf("  %d    %d       %d            %d            %d\n", r + 1, pid[i],
+           prios[i], cur[i], fin[i]);
+  }
+  printf("lowest-priority process (prio %d) completed at t=%d: no starvation\n",
+         prios[low], fin[low]);
+  exit(0);
+}
