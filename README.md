@@ -1,4 +1,4 @@
-# OS Lab Assignment 7 — xv6-riscv
+# OS Lab Assignment 7 
 
 This repository contains the implementation of OS Lab Assignment 7 using the xv6-riscv operating system.
 
