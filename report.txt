@@ -1,0 +1,10 @@
+
+Q1 – Race Condition: Multiple threads increment a shared counter without synchronization, causing lost updates. The expected result for three workers performing 100,000 increments each is 300,000.
+
+Q2 – Semaphores: Semaphores are used to protect the shared counter and coordinate producer–consumer operations. The empty, full, and mutex semaphores help prevent buffer overflow, underflow, and race conditions.
+
+Q3 – Deadlock Detection: The `deadlock.c` program uses Allocation, Request, Need, and Available arrays to detect deadlocks and check safe states using Banker's Algorithm. Testing identified P0, P1, and P2 in the deadlocked scenario. The safe-state test produced the sequence P1 → P3 → P4 → P0 → P2. An unsafe request from P4 was rejected. A pipe-based test also demonstrated circular waiting between two processes. A compilation issue with `sleep()` was resolved using a busy-wait loop.
+
+Q4 – Priority Scheduling: The scheduler selects runnable processes according to priority, with aging improving the priority of processes that wait too long. Completion times will be recorded using `priotest.c` to evaluate scheduling and starvation prevention.
+
+Conclusion: These tasks demonstrate race conditions, synchronization, deadlock detection, and CPU scheduling in xv6. Actual Q1, Q2, and Q4 test results should be added before submission.
